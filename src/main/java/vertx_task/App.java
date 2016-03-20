@@ -1,8 +1,11 @@
 package vertx_task;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
+import io.netty.handler.codec.http.HttpMethod;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerResponse;
@@ -15,27 +18,28 @@ import io.vertx.ext.web.handler.StaticHandler;
 
 public class App extends AbstractVerticle {
 
-	// Store our product
-	private Map<Integer, Task> products = new LinkedHashMap<>();
+	// Store our tasks
+	private Map<Integer, Task> tasks = new LinkedHashMap<>();
 
-	// Create some product
+	// Create some tasks
+		
 	private void createSomeData() {
-		Task bowmore = new Task("GSoC Proposal");
-		products.put(bowmore.getId(), bowmore);
-		Task talisker = new Task("Ionic install");
-		products.put(talisker.getId(), talisker);
+		Task dothis = new Task("GSoC Proposal");
+		tasks.put(dothis.getId(), dothis);
+		Task dothat = new Task("Ionic install");
+		tasks.put(dothat.getId(), dothat);
 	}
 
 	private void getAll(RoutingContext routingContext) {
 		routingContext.response().putHeader("content-type", "application/json; charset=utf-8")
-				.end(Json.encodePrettily(products.values()));
+				.end(Json.encodePrettily(tasks.values()));
 	}
 
 	private void addOne(RoutingContext routingContext) {
 		JsonObject json = routingContext.getBodyAsJson();
 		System.out.println(json);
 		Task task = new Task(json.getString("name"));
-		products.put(task.getId(), task);
+		tasks.put(task.getId(), task);
 		routingContext.response().setStatusCode(201).putHeader("content-type", "application/json; charset=utf-8")
 				.end(Json.encodePrettily(task));
 	}
@@ -46,7 +50,7 @@ public class App extends AbstractVerticle {
 			routingContext.response().setStatusCode(400).end();
 		} else {
 			Integer idAsInteger = Integer.valueOf(id);
-			products.remove(idAsInteger);
+			tasks.remove(idAsInteger);
 		}
 		routingContext.response().setStatusCode(204).end();
 	}
@@ -58,7 +62,7 @@ public class App extends AbstractVerticle {
 			routingContext.response().setStatusCode(400).end();
 		} else {
 			final Integer idAsInteger = Integer.valueOf(id);
-			Task task = products.get(idAsInteger);
+			Task task = tasks.get(idAsInteger);
 			if (task == null) {
 				routingContext.response().setStatusCode(404).end();
 			} else {
@@ -80,7 +84,19 @@ public class App extends AbstractVerticle {
 
 		// Create a router object.
 		Router router = Router.router(vertx);
-
+		
+		// CORS support
+        Set<String> allowHeaders = new HashSet<>();
+        allowHeaders.add("x-requested-with");
+        allowHeaders.add("origin");
+        allowHeaders.add("content-type");
+        allowHeaders.add("accept");
+        Set<HttpMethod> allowMethods = new HashSet<>();
+        allowMethods.add(HttpMethod.GET);
+        allowMethods.add(HttpMethod.POST);
+        allowMethods.add(HttpMethod.DELETE);
+        allowMethods.add(HttpMethod.PATCH);
+		
 		// Serve static resources from the /assets directory
 		router.route("/assets/*").handler(StaticHandler.create("assets"));
 
@@ -102,13 +118,7 @@ public class App extends AbstractVerticle {
 		vertx.createHttpServer().requestHandler(router::accept).listen(
 				// Retrieve the port from the configuration,
 				// default to 8080.
-				config().getInteger("http.port", 8080), result -> {
-					if (result.succeeded()) {
-						fut.complete();
-					} else {
-						fut.fail(result.cause());
-					}
-				});
+				Integer.getInteger("http.port", 8080), System.getProperty("http.address","localhost"));
 
 	}
 }
