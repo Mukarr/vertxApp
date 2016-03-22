@@ -1,7 +1,5 @@
 package vertx_task;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Task {
@@ -19,10 +17,10 @@ public class Task {
 	private int priority;
 
 	public Task(String name) {
-		this.id = COUNTER.getAndIncrement();
+		this.id = COUNTER.incrementAndGet();
 		this.name = name;
 		this.completed = false;
-		this.priority = COUNT.getAndIncrement();
+		this.priority = COUNT.incrementAndGet();
 	}
 
 	public Task() {

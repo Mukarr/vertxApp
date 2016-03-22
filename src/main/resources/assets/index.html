@@ -13,14 +13,18 @@
     <div class="jumbotron">
         <h1>My Tasklist</h1>
 
-        <p>Just an example of simple CRUD application developed using Vert.x and Vertx Web.</p>
+        <p>Just an example of simple CRUD application developed using Vert.x and Vert.x Web.</p>
     </div>
     <div class="page-header">
         <h1>My Tasks</h1>
+         <button class="pull-right btn btn-submit" data-action="clear">
+            <span class="glyphicon glyphicon-minus"></span> Clear all tasks
+        </button>
         <button class="pull-right btn btn-primary product-add" data-action="add" data-toggle="modal"
                 data-target="#productModal">
             <span class="glyphicon glyphicon-plus"></span> Add a new task
         </button>
+       
         <div class="row">
             <div class="col-md-12">
                 <table class="table table-striped">
@@ -51,7 +55,15 @@
             load();
         }, "json");
     }
-
+	
+    function clear(){
+    	$.ajax({
+            method: "DELETE",
+            url: "/api/tasks/"
+        }).done(function () {
+            load();
+        });
+    }
     function remove(id) {
         $.ajax({
             method: "DELETE",
@@ -102,7 +114,7 @@
            remove(id);
         });
     }
-
+    
     function initModal() {
         $("#productModal").on('show.bs.modal', function (event) {
             var button = $(event.relatedTarget);
@@ -137,6 +149,7 @@
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 <h4 class="modal-title" id="productModalTitle">Add a task</h4>
+                
             </div>
             <div class="modal-body">
                 <form>
