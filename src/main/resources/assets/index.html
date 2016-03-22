@@ -31,7 +31,7 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Name</th>
+                        <th>title</th>
                         <th>Completed</th>
                         <th>Actions</th>
                     </tr>
@@ -50,8 +50,8 @@
         initModal();
     });
 
-    function create(name, origin) {
-        $.post("/api/tasks", JSON.stringify({name: name}), function () {
+    function create(title, origin) {
+        $.post("/api/tasks", JSON.stringify({title: title}), function () {
             load();
         }, "json");
     }
@@ -73,11 +73,11 @@
         });
     }
 
-    function update(id, name, completed) {
+    function update(id, title, completed) {
         $.ajax({
             method: "PUT",
             url: "/api/tasks/" + id,
-            data: JSON.stringify({name: name, completed: completed, priority: "10"})
+            data: JSON.stringify({title: title, completed: completed, order: "10"})
         }).done(function () {
             load();
         });
@@ -87,12 +87,12 @@
         $("#content").children().remove();
         $.getJSON("/api/tasks", function (data) {
             $.each(data, function (key, val) {
-                $("<tr><td>" + val.id + "</td><td>" + val.name + "</td><td>" + val.completed + "</td>" +
+                $("<tr><td>" + val.id + "</td><td>" + val.title + "</td><td>" + val.completed + "</td>" +
                         "<td>" +
                         "<button data-action='edit' class='btn btn-primary btn-sm product-edit' " +
                         "data-toggle='modal' " +
                         "data-target='#productModal' " +
-                        "data-name='" + val.name + "' " +
+                        "data-title='" + val.title + "' " +
                         "data-completed='" + val.completed + "' " +
                         "data-id='" + val.id + "'>" +
                         "<span class='glyphicon glyphicon-pencil'></span>" +
@@ -125,18 +125,18 @@
             var modal = $(this);
             if (action === "add") {
                 modal.find('.modal-title').text("Add a task");
-                modal.find('#product-name').val("");
+                modal.find('#product-title').val("");
                 
                 productAction.click(function () {
-                    create($("#product-name").val());
+                    create($("#product-title").val());
                     $('#productModal').modal('toggle');
                 });
             } else {
                 modal.find('.modal-title').text("Edit a task");
-                modal.find('#product-name').val(button.data("name"));
+                modal.find('#product-title').val(button.data("title"));
                 modal.find('#product-completed').val(button.data("completed"));               
                 productAction.click(function () {
-                    update(id, $("#product-name").val(), $("#product-completed").val());
+                    update(id, $("#product-title").val(), $("#product-completed").val());
                     $('#productModal').modal('toggle');
                 });
             }
@@ -154,8 +154,8 @@
             <div class="modal-body">
                 <form>
                     <div class="form-group">
-                        <label for="product-name" class="control-label">Name:</label>
-                        <input type="text" class="form-control" id="product-name">
+                        <label for="product-title" class="control-label">title:</label>
+                        <input type="text" class="form-control" id="product-title">
                     </div>
                     <div class="form-group">
                         <label for="product-origin" class="control-label">Completed:</label>

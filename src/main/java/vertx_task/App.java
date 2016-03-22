@@ -5,9 +5,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import io.netty.handler.codec.http.HttpMethod;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -15,6 +15,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.redis.RedisClient;
 import io.vertx.redis.RedisOptions;
@@ -33,7 +34,8 @@ public class App extends AbstractVerticle {
                 .setHost("127.0.0.1");
         redis = RedisClient.create(vertx, config);
         
-        Task dothis = new Task("GSoC Proposal");
+        Task dothis = new Task("GSoC Proposal", false, 2, "/tasks/2");
+        System.out.println(Json.encode(dothis));
         redis.hset(Todo, String.valueOf(dothis.getId()), Json.encode(
                 dothis), res -> {
             if (res.failed()) {
@@ -51,7 +53,7 @@ public class App extends AbstractVerticle {
             }
         });
 		
-//		
+	
 //		Task dothis = new Task("GSoC Proposal");
 //		products.put(dothis.getId(), dothis);
 //		Task dothat = new Task("Ionic install");
@@ -79,11 +81,37 @@ public class App extends AbstractVerticle {
 //		routingContext.response().putHeader("content-type", "application/json; charset=utf-8")
 //				.end(Json.encodePrettily(products.values()));
 	}
+	
+	private void getOne(RoutingContext routingContext){
+		String id = routingContext.request().getParam("id");
+        if (id == null)
+        	routingContext.response()
+            .setStatusCode(404);
+        else {
+            redis.hget(Todo, id, x -> {
+                String result = x.result();
+                if (result == null)
+                	routingContext.response()
+                    .setStatusCode(404);
+                else {
+                	routingContext.response()
+                            .putHeader("content-type", "application/json; charset=utf-8")
+                            .end(result);
+                }
+            });
+        }
+	}
 
 	private void addOne(RoutingContext routingContext) {
 		JsonObject json = routingContext.getBodyAsJson();
 		System.out.println(json);
-		Task task = new Task(json.getString("name"));
+		Task task = new Task(json.getString("title"));
+		if(json.containsKey("completed"))
+			task.setCompleted(json.getBoolean("completed").equals(true)?true:false);
+		
+		if(json.containsKey("order"))
+			task.setOrder(Integer.parseInt(json.getInteger("order").toString()));
+		task.setUrl(routingContext.request().absoluteURI() +  "/" + task.getId());
 		
 		redis.hset(Todo, String.valueOf(task.getId()),
 				Json.encode(task), res -> {
@@ -139,9 +167,17 @@ public class App extends AbstractVerticle {
 		            	routingContext.response().setStatusCode(404).end();
 		            else {  	
 		            	Task task = Json.decodeValue(result, Task.class);
-		            	task.setName(json.getString("name"));
-						task.setCompleted(json.getString("completed").equals("true")?true:false);
-						task.setPriority(Integer.parseInt(json.getString("priority")));
+		            	
+		            	System.out.println("I am updating"+ task.getId());
+		            	
+		            	task.setTitle(json.getString("title"));
+		            	
+		            	if(json.containsKey("completed"))
+							task.setCompleted(json.getBoolean("completed").equals(true)?true:false);
+						
+						if(json.containsKey("order"))
+							task.setOrder(Integer.parseInt(json.getInteger("order").toString()));
+												
 		                String response = Json.encode(task);
 		                redis.hset(Todo, id, response, res -> {
 		                    if (res.succeeded()) {
@@ -158,9 +194,9 @@ public class App extends AbstractVerticle {
 				routingContext.response().setStatusCode(404).end();
 			} else {
 				
-				task.setName(json.getString("name"));
+				task.settitle(json.getString("title"));
 				task.setCompleted(json.getString("completed").equals("true")?true:false);
-				task.setPriority(Integer.parseInt(json.getString("priority")));
+				task.setorder(Integer.parseInt(json.getString("order")));
 				routingContext.response().putHeader("content-type", "application/json; charset=utf-8")
 						.end(Json.encodePrettily(task));
 			}
@@ -180,22 +216,31 @@ public class App extends AbstractVerticle {
 		// CORS support
         Set<String> allowHeaders = new HashSet<>();
         allowHeaders.add("x-requested-with");
+        allowHeaders.add("Access-Control-Allow-Origin");
         allowHeaders.add("origin");
         allowHeaders.add("content-type");
         allowHeaders.add("accept");
-        Set<HttpMethod> allowMethods = new HashSet<>();
+        Set<io.vertx.core.http.HttpMethod> allowMethods = new HashSet<>();
         allowMethods.add(HttpMethod.GET);
         allowMethods.add(HttpMethod.POST);
-        allowMethods.add(HttpMethod.DELETE);
+        allowMethods.add(HttpMethod.PUT);
         allowMethods.add(HttpMethod.PATCH);
+        allowMethods.add(HttpMethod.DELETE);
+        
+        router.route().handler(CorsHandler.create("*")
+                .allowedHeaders(allowHeaders)
+                .allowedMethods(allowMethods));
 		
 		// Serve static resources from the /assets directory
 		router.route("/assets/*").handler(StaticHandler.create("assets"));
-
+		
 		router.get("/api/tasks").handler(this::getAll);
+		router.get("/api/tasks/:id").handler(this::getOne);
 		router.route("/api/tasks*").handler(BodyHandler.create());
 		router.post("/api/tasks").handler(this::addOne);
 		router.delete("/api/tasks/:id").handler(this::deleteOne);
+		router.delete("/api/tasks").handler(this::deleteAll);
+		router.patch("/api/tasks/:id").handler(this::updateOne);
 		router.put("/api/tasks/:id").handler(this::updateOne);
 
 		// Bind "/" to our hello message - so we are still compatible.

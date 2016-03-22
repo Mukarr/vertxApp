@@ -10,49 +10,73 @@ public class Task {
 
 	private final int id;
 
-	private String name;
+	private String title;
 	
 	private Boolean completed;
 	
-	private int priority;
+	private String url;
+	
+	private int order;
 
-	public Task(String name) {
+	public Task(String title) {
 		this.id = COUNTER.incrementAndGet();
-		this.name = name;
+		this.title = title;
 		this.completed = false;
-		this.priority = COUNT.incrementAndGet();
+		this.order = COUNT.incrementAndGet();
 	}
-
+	
 	public Task() {
 		this.id = COUNTER.getAndIncrement();
 	}
 
-	public String getName() {
-		return name;
+	public Task(String title, Boolean completed, int order, String url) {
+		this.id = COUNTER.getAndIncrement();
+        this.title = title;
+        this.completed = completed;
+        this.order = order;
+        this.url = url;
+    }
+	
+	public Task(String title, int order) {
+		this.id = COUNTER.getAndIncrement();
+		this.title =title;
+		this.order = order;
+	}
+	
+	public String getTitle() {
+		return title;
 	}
 
-	public int getPriority() {
-		return priority;
+	public int getOrder() {
+		return order;
 	}
 
 	public int getId() {
 		return id;
 	}
 	
+	public String getUrl(){
+		return url;
+	}
+	
 	public Boolean getCompleted(){
 		return completed;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setTitle(String title) {
+		this.title = title;
 	}
 
-	public void setPriority(int priority) {
-		this.priority = priority;
+	public void setOrder(int order) {
+		this.order = order;
 	}
 	
 	public void setCompleted(Boolean completed) {
 		this.completed = completed;
+	}
+	
+	public void setUrl(String url){
+		this.url=url;
 	}
 	
 }
