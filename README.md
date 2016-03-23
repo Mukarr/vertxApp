@@ -6,7 +6,7 @@ A To-do app built using [Vert.x](http://vertx.io/) and [Redis](http://redis.io/)
 
 To build
 ```bash
-maven clean test
+maven clean install
 ```
 Backend API Testing
 https://github.com/Mukarr/vertxApp/blob/master/src/docs/TestcaseCheck.png
